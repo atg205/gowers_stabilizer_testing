@@ -1,0 +1,21 @@
+[project]
+name = "gowers-stabilizer-testing"
+
+version = "0.1.0"
+description = "Implementing the algorithm presented in Polynomial-time tolerant testing stabilizer states by Arunachalam et al"
+authors = [
+    {name = "atg205",email = "hanup@mailbox.org"}
+]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "sympy (>=1.14.0,<2.0.0)"
+]
+
+[tool.poetry]
+package-mode = false
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
