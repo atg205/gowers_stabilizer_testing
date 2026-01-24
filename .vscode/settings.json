@@ -1,0 +1,5 @@
+{
+    "python.analysis.extraPaths": [
+        "./src/gowers_stabilizer_testing"
+    ]
+}
