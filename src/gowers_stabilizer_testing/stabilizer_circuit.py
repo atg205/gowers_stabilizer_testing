@@ -192,10 +192,12 @@ for circuit_type in ['clifford','random']:
                 C = C.decompose()
 
         eta = sum(result) /len(result)
-        final_outcome = 1 if eta > ALPHA1 ** 6 - GAMMA / 2 else 0
+        threshold = ALPHA1 ** 6 - GAMMA / 2
+        final_outcome = 1 if eta > threshold / 2 else 0
         result_dict[circuit_type].append(eta)
-        print(print(final_outcome))
+        print(final_outcome)
 
+        result_dict['threshold'].append(threshold)
 print(result_dict)
 timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 filename = f"iteration_results_{timestamp}.json"
