@@ -17,31 +17,30 @@ SHOTS = 1
 
 
 
-def apply_W(qc: QuantumCircuit, qreg, x, y, alpha, beta):
-    x_xor_y = np.bitwise_xor(x, y)[0][0]
-    alpha_xor_beta = np.bitwise_xor(alpha, beta)[0][0]
+def apply_W(qc: QuantumCircuit, qreg, x, y):
+    
+    xbin = np.binary_repr(x[0][0])
+    xbin = (len(qreg)-len(xbin)) * '0' + xbin
 
-    x_bits = format(x_xor_y, f'0{len(qreg)}b')
-    a_bits = format(alpha_xor_beta, f'0{len(qreg)}b')
+    ybin = np.binary_repr(y[0][0])
+    ybin = (len(qreg)-len(ybin)) * '0' + ybin      
 
-    for i, (xb, ab) in enumerate(zip(x_bits, a_bits)):
-        if xb == '1':
+    for i, (a,b) in enumerate(zip(xbin[::-1], ybin[::-1])):
+        if a == '1':
             qc.x(qreg[i])
-        if ab == '1':
+        if b == '1':
             qc.z(qreg[i])
-    
     return
-    x_xor_y = np.bitwise_xor(x, y)[0][0]
-    alpha_xor_beta = np.bitwise_xor(alpha, beta)[0][0] 
-
-    x_xor_y_bin = np.binary_repr(x_xor_y)
-    x_xor_y_bin = (len(qreg)-len(x_xor_y_bin)) * '0' + x_xor_y_bin
-
-    alpha_xor_beta_bin = np.binary_repr(alpha_xor_beta)
-    alpha_xor_beta_bin = (len(qreg)-len(alpha_xor_beta_bin)) * '0' + alpha_xor_beta_bin
     
 
-    for i, (a,b) in enumerate(zip(x_xor_y_bin[::-1], alpha_xor_beta_bin[::-1])):
+
+    xbin = np.binary_repr(x[0][0])
+    xbin = (len(qreg)-len(xbin)) * '0' + xbin
+
+    ybin = np.binary_repr(y[0][0])
+    ybin = (len(qreg)-len(ybin)) * '0' + ybin      
+
+    for i, (a,b) in enumerate(zip(xbin[::-1], ybin[::-1])):
         if int(a) and int(b):
             qc.sdg(qreg[i])
             qc.h(qreg[i])
@@ -50,33 +49,25 @@ def apply_W(qc: QuantumCircuit, qreg, x, y, alpha, beta):
         elif int(b):
             qc.z(qreg[i])
     
-n = 4
+n = 2
 
 
 def perform_circuit(C,draw = False):
     psi1 = QuantumRegister(n, 'psi1')
 
     psi2 = QuantumRegister(n, 'psi2')
-    psi3 = QuantumRegister(n, 'psi3')
-    psi4 = QuantumRegister(n, 'psi4')
 
 
     cx = ClassicalRegister(n, 'cx')
-    calpha = ClassicalRegister(n, 'calpha')
     cy = ClassicalRegister(n, 'cy')
-    cbeta = ClassicalRegister(n, 'cbeta')
 
     bell_qc = QuantumCircuit(
-        psi1, psi2, psi3, psi4,
-        cx,calpha,cy,cbeta,
+        psi1, psi2,cx,cy,
     )
-
-
 
     bell_qc.compose(C, qubits=psi1, inplace=True)
     bell_qc.compose(C, qubits=psi2, inplace=True)
-    bell_qc.compose(C, qubits=psi3, inplace=True)
-    bell_qc.compose(C, qubits=psi4, inplace=True)
+
 
     bell_qc.barrier()
     for j in range(n):
@@ -84,15 +75,10 @@ def perform_circuit(C,draw = False):
         bell_qc.cx(psi1[j], psi2[j])
         bell_qc.h(psi1[j])
 
-        # bell state third and fourth copy
-        bell_qc.cx(psi3[j], psi4[j])
-        bell_qc.h(psi3[j])
 
     bell_qc.barrier()
     bell_qc.measure(psi1, cx)
-    bell_qc.measure(psi2, calpha)
-    bell_qc.measure(psi3, cy)
-    bell_qc.measure(psi4, cbeta)
+    bell_qc.measure(psi2, cy)
 
     if draw:
         bell_qc.draw(output="mpl", fold=-1)
@@ -104,9 +90,7 @@ def perform_circuit(C,draw = False):
     first_result = job.result()[0]
 
     x = first_result.data['cx'].array
-    alpha = first_result.data['calpha'].array
     y = first_result.data['cy'].array
-    beta = first_result.data['cbeta'].array
 
     ###     Actual measurement circuit      ###
     psi5 = QuantumRegister(n, 'psi5')
@@ -124,15 +108,15 @@ def perform_circuit(C,draw = False):
 
     m_qc.barrier()
 
-    apply_W(m_qc, psi5, x,y,alpha, beta)
-    apply_W(m_qc, psi6, x,y,alpha, beta)
+    apply_W(m_qc, psi5, x,y)
+    apply_W(m_qc, psi6, x,y)
 
     m_qc.barrier()
     m_qc.measure(psi5, c_psi_x)
     m_qc.measure(psi6, c_psi_y)
 
     if draw:
-        print(f'x {x}, y {y}, alpha {alpha}, beta {beta}, xy {np.bitwise_xor(x[0][0], y[0][0])}, alphabeta {np.bitwise_xor(alpha[0][0], beta[0][0])}')
+        print(f'x {x}, y {y}')
         m_qc.draw(output="mpl", fold=-1)
         plt.show()
 
@@ -174,22 +158,24 @@ m = int((8*math.log(2/DELTA, 2))/GAMMA ** 2)
 print(m)
 for circuit_type in ['clifford','random']:
     print(circuit_type)
-    for _ in range(100):
+    for _ in range(50):
         result = []
         if circuit_type == 'random':
-            C = random_circuit(n,3,measure=False)
+            C = random_circuit(n,2,measure=False)
             C = C.decompose()
         else:
             C = get_random_clifford_circuit(n)
-        for _ in range(m):
+        for _ in tqdm(range(m)):
             try:
                 result.append(perform_circuit(C,draw=False))
             except:
                 print("Regenerating random circuit")
                 C = random_circuit(n,4)
                 C = C.decompose()
+ 
 
         eta = sum(result) /len(result)
+        print(f'eta {eta}')
         threshold = ALPHA1 ** 6 - GAMMA / 2
         final_outcome = 1 if eta > threshold / 2 else 0
         result_dict[circuit_type].append(eta)
@@ -198,7 +184,7 @@ for circuit_type in ['clifford','random']:
         result_dict['threshold'].append(threshold)
 print(result_dict)
 timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-filename = f"iteration_results_{timestamp}.json"
+filename = f"simple_iteration_results_{timestamp}_returned.json"
 with open(filename,"w") as file:
     json.dump(result_dict, file)
 #plt.show()

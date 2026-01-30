@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Load data
-with open("iteration_results_20260129_114041.json", "r") as f:
+with open("iteration_results_20260130_110709.json", "r") as f:
     data = json.load(f)
 
 random_vals = np.array(data["random"])
